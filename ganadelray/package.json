@@ -1,0 +1,24 @@
+{
+  "name": "ganadelray-tiktok-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Daily idea drip for @ganadelray — fresh, shootable video ideas derived from her own follower-converting winners.",
+  "main": "index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "selfcheck": "node scripts/selfcheck.js",
+    "selfcheck:live": "node scripts/selfcheck.js --live",
+    "ingest": "node scripts/ingest-file.js",
+    "drip": "node scripts/run-drip.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.68.0",
+    "@supabase/supabase-js": "^2.45.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "telegraf": "4.16.3"
+  }
+}
