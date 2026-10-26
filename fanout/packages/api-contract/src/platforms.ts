@@ -16,6 +16,8 @@ export const destinationSettingsViewSchema = z.object({
   channelId: z.string().nullable(),
   captionTemplate: z.string(),
   hashtags: z.array(z.string()),
+  /** The connected Buffer accounts that can post to this platform. */
+  channelOptions: z.array(bufferChannelViewSchema),
   /** live: posts for real through Buffer. practice: shows what it would post. */
   mode: z.enum(['live', 'practice']),
 });

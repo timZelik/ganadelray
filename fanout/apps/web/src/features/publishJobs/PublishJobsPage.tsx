@@ -23,8 +23,8 @@ export function PublishJobsPage() {
     <section className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold">Publish jobs</h1>
-          <p className="text-sm text-muted-foreground">Every source item × destination. Refreshes every few seconds.</p>
+          <h1 className="text-xl font-semibold">Activity log</h1>
+          <p className="text-sm text-muted-foreground">Every post attempt, with technical details. Refreshes every few seconds.</p>
         </div>
         <StatusFilter selected={status} onSelect={setStatus} />
       </div>

@@ -30,7 +30,8 @@ describe('platform settings', () => {
     const byKind = Object.fromEntries(settings.destinations.map((destination) => [destination.destinationKind, destination]));
     expect(byKind.tiktok).toMatchObject({ channelId: 'channel-tiktok', mode: 'live' });
     expect(byKind.instagram_reels).toMatchObject({ channelId: 'channel-instagram', mode: 'live' });
-    expect(byKind.youtube_shorts).toMatchObject({ channelId: null, mode: 'practice' });
+    expect(byKind.youtube_shorts).toMatchObject({ channelId: null, mode: 'practice', channelOptions: [] });
+    expect(byKind.tiktok!.channelOptions).toEqual([{ id: 'channel-tiktok', name: 'Gana', service: 'tiktok', avatar: null }]);
     const stored = [...fake.connections.values()].find((connection) => connection.platform === 'buffer')!;
     expect(stored.tokenSet!.accessToken).toBe('valid-buffer-key');
   });

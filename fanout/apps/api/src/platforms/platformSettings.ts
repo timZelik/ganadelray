@@ -37,7 +37,7 @@ function channelIdOf(destination: WorkflowDestination): string | null {
   return typeof destination.publisherSettings.channelId === 'string' ? destination.publisherSettings.channelId : null;
 }
 
-function presentDestination(destination: WorkflowDestination, dryRun: boolean): DestinationSettingsView {
+function presentDestination(destination: WorkflowDestination, dryRun: boolean, channels: BufferChannelView[]): DestinationSettingsView {
   const isLive = destination.publisherRoute === 'buffer' && channelIdOf(destination) !== null && !dryRun;
   return {
     id: destination.id,
@@ -46,6 +46,7 @@ function presentDestination(destination: WorkflowDestination, dryRun: boolean): 
     channelId: destination.publisherRoute === 'buffer' ? channelIdOf(destination) : null,
     captionTemplate: destination.captionTemplate,
     hashtags: destination.hashtags,
+    channelOptions: channels.filter((channel) => channel.service === bufferServiceByDestination[destination.destinationKind]),
     mode: isLive ? 'live' : 'practice',
   };
 }
@@ -61,7 +62,7 @@ export async function readPlatformSettings(dependencies: ApiDependencies): Promi
     },
     livePostingEnabled: !dependencies.dryRun,
     fitMode: workflow.fitMode,
-    destinations: workflow.destinations.map((destination) => presentDestination(destination, dependencies.dryRun)),
+    destinations: workflow.destinations.map((destination) => presentDestination(destination, dependencies.dryRun, storedChannels(bufferConnection))),
   };
 }
 
