@@ -9,6 +9,12 @@ describe('publish job status machine', () => {
     expect(canTransition('processing', 'published')).toBe(true);
   });
 
+  it('lets a retried publish attempt reclaim a job that went back to queued', () => {
+    expect(canTransition('publishing', 'queued')).toBe(true);
+    expect(statusesThatCanTransitionTo('publishing').sort()).toEqual(['preparing', 'queued']);
+    expect(canTransition('publishing', 'publishing')).toBe(false);
+  });
+
   it('never leaves published', () => {
     expect(statusesThatCanTransitionTo('queued')).not.toContain('published');
     expect(() => assertTransition('published', 'queued')).toThrow(PermanentError);

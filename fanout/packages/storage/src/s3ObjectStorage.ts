@@ -1,10 +1,11 @@
 import { createReadStream, createWriteStream } from 'node:fs';
-import { Readable } from 'node:stream';
+import type { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { CreateBucketCommand, DeleteObjectCommand, GetObjectCommand, HeadBucketCommand, HeadObjectCommand, S3Client, type S3ClientConfig } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import type { ObjectStorage, UploadBody } from './objectStorage.ts';
+import { toNodeReadable } from './streams.ts';
 
 export interface S3StorageSettings {
   bucket: string;
@@ -39,7 +40,7 @@ function isNotFound(error: unknown): boolean {
 }
 
 function toUploadBody(body: UploadBody): Readable | Uint8Array {
-  return body instanceof ReadableStream ? Readable.fromWeb(body as import('node:stream/web').ReadableStream) : body;
+  return body instanceof ReadableStream ? toNodeReadable(body) : body;
 }
 
 export function createS3ObjectStorage(settings: S3StorageSettings): ObjectStorage {

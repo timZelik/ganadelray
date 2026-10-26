@@ -1,6 +1,5 @@
 import { planPublishJobs } from '@fanout/domain';
-import { buildMediaMetadata, startPostgresContainer, testEncryptionKey } from '@fanout/testing';
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { buildMediaMetadata, startPostgresContainer, testEncryptionKey, type StartedPostgreSqlContainer } from '@fanout/testing';
 import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDatabase, createRepositories, createTokenCipher, ensureDefaultHubWorkflow, runMigrations, type DatabaseHandle, type Repositories } from '../src/index.ts';

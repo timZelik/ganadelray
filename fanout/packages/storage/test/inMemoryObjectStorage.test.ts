@@ -1,13 +1,13 @@
 import { text } from 'node:stream/consumers';
 import { Readable } from 'node:stream';
 import { describe, expect, it } from 'vitest';
-import { createInMemoryObjectStorage, storageKeys } from '../src/index.ts';
+import { createInMemoryObjectStorage, storageKeys, toNodeReadable } from '../src/index.ts';
 
 describe('in-memory object storage', () => {
   it('honours the ObjectStorage contract for streams', async () => {
     const storage = createInMemoryObjectStorage();
     await storage.upload('key', Readable.from(['he', 'llo']), 'text/plain');
-    expect(await text(Readable.fromWeb((await storage.openReadStream('key')) as import('node:stream/web').ReadableStream))).toBe('hello');
+    expect(await text(toNodeReadable(await storage.openReadStream('key')))).toBe('hello');
     await expect(storage.openReadStream('missing')).rejects.toThrow(/NoSuchKey/);
   });
 });

@@ -30,7 +30,11 @@ export const environmentSchema = z.object({
 
   HUB_DIRECTORY: z.string().default('./hub'),
   WATCH_INTERVAL_SECONDS: z.coerce.number().int().positive().default(15),
+  /** A hub file must be unchanged this long before ingest, so half-copied exports are skipped. */
+  HUB_SETTLE_SECONDS: z.coerce.number().nonnegative().default(5),
   PUBLISH_DRY_RUN: booleanFromString.default(true),
+  /** X charges extra for posts containing URLs; strip them from X captions. */
+  X_COST_SAVING_MODE: booleanFromString.default(true),
   RENDERED_ASSET_RETENTION_DAYS: z.coerce.number().int().positive().default(7),
   PRESIGNED_URL_TTL_SECONDS: z.coerce.number().int().positive().default(24 * 60 * 60),
   MINIMUM_SOURCE_DURATION_SECONDS: z.coerce.number().nonnegative().default(1),

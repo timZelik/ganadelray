@@ -5,8 +5,12 @@ export const publishJobStatuses = ['queued', 'preparing', 'publishing', 'process
 export const publishJobStatusSchema = z.enum(publishJobStatuses);
 export type PublishJobStatus = z.infer<typeof publishJobStatusSchema>;
 
+/**
+ * `queued` doubles as "waiting for a retry": a retryable failure moves preparing/publishing back to queued,
+ * keeping lastError and attemptCount, and the next attempt claims it again through a compare-and-set.
+ */
 const allowedTransitions: Record<PublishJobStatus, readonly PublishJobStatus[]> = {
-  queued: ['preparing', 'skipped', 'failed'],
+  queued: ['preparing', 'publishing', 'skipped', 'failed'],
   preparing: ['publishing', 'failed', 'skipped', 'queued'],
   publishing: ['processing', 'published', 'failed', 'queued'],
   processing: ['published', 'failed'],

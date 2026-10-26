@@ -1,6 +1,9 @@
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { GenericContainer, Wait, type StartedTestContainer } from 'testcontainers';
 
+export type { StartedTestContainer } from 'testcontainers';
+export type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+
 export const containerImages = {
   postgres: 'postgres:17-alpine',
   redis: 'valkey/valkey:8-alpine',

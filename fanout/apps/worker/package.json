@@ -12,6 +12,8 @@
     "start": "node src/main.ts"
   },
   "dependencies": {
+    "bullmq": "^6.4.2",
+    "ioredis": "^6.0.0",
     "@fanout/domain": "workspace:*",
     "@fanout/config": "workspace:*",
     "@fanout/logging": "workspace:*",
