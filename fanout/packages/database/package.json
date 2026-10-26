@@ -1,0 +1,27 @@
+{
+  "name": "@fanout/database",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node src/scripts/migrate.ts",
+    "db:seed": "node src/scripts/seed.ts"
+  },
+  "dependencies": {
+    "@fanout/domain": "workspace:*",
+    "@fanout/config": "workspace:*",
+    "drizzle-orm": "^0.45.4",
+    "pg": "^8.23.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@fanout/testing": "workspace:*",
+    "drizzle-kit": "^0.31.11",
+    "@types/pg": "^8.15.0"
+  }
+}

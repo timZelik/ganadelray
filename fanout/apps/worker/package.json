@@ -1,0 +1,30 @@
+{
+  "name": "@fanout/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "dev": "node --watch src/main.ts",
+    "start": "node src/main.ts"
+  },
+  "dependencies": {
+    "@fanout/domain": "workspace:*",
+    "@fanout/config": "workspace:*",
+    "@fanout/logging": "workspace:*",
+    "@fanout/database": "workspace:*",
+    "@fanout/queue": "workspace:*",
+    "@fanout/storage": "workspace:*",
+    "@fanout/media": "workspace:*",
+    "@fanout/captions": "workspace:*",
+    "@fanout/connectors-core": "workspace:*",
+    "@fanout/connector-console": "workspace:*",
+    "@fanout/connector-local-folder": "workspace:*"
+  },
+  "devDependencies": {
+    "@fanout/testing": "workspace:*"
+  }
+}

@@ -1,0 +1,10 @@
+packages:
+  - apps/*
+  - packages/*
+  - packages/connectors/*
+onlyBuiltDependencies:
+  - esbuild
+  - ssh2
+  - cpu-features
+  - protobufjs
+  - msgpackr-extract

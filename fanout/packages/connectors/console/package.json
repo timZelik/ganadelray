@@ -1,0 +1,20 @@
+{
+  "name": "@fanout/connector-console",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@fanout/connectors-core": "workspace:*",
+    "@fanout/domain": "workspace:*",
+    "@fanout/logging": "workspace:*"
+  },
+  "devDependencies": {
+    "@fanout/testing": "workspace:*"
+  }
+}

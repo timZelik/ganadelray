@@ -1,0 +1,30 @@
+{
+  "name": "@fanout/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "dev": "node --watch src/main.ts",
+    "start": "node src/main.ts"
+  },
+  "dependencies": {
+    "@fanout/domain": "workspace:*",
+    "@fanout/config": "workspace:*",
+    "@fanout/logging": "workspace:*",
+    "@fanout/database": "workspace:*",
+    "@fanout/queue": "workspace:*",
+    "@fanout/api-contract": "workspace:*",
+    "fastify": "^5.12.7",
+    "fastify-type-provider-zod": "^7.0.0",
+    "@bull-board/api": "^9.10.5",
+    "@bull-board/fastify": "^9.10.5",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@fanout/testing": "workspace:*"
+  }
+}
