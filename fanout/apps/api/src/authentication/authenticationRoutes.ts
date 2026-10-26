@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { ApiServer } from '../server.ts';
-import type { Authentication } from './authentication.ts';
+import type { Authentication, SessionUser } from './authentication.ts';
 
 import { authenticationBasePath } from '@fanout/api-contract';
 
@@ -59,6 +59,6 @@ export function registerAuthentication(server: ApiServer, authentication: Authen
 
 declare module 'fastify' {
   interface FastifyRequest {
-    sessionUser?: import('./authentication.ts').SessionUser;
+    sessionUser?: SessionUser;
   }
 }
