@@ -58,17 +58,22 @@ export function DestinationCard({ destination, bufferConnected }: { destination:
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-3">
-              <Field label="Caption style">
-                <TextArea value={template} onChange={(event) => setTemplate(event.target.value)} rows={4} data-testid="template-input" />
-              </Field>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">Insert:</span>
-                {placeholders.map(({ token, label: placeholderLabel }) => (
-                  <button key={token} type="button" onClick={() => setTemplate((current) => `${current}${current.endsWith('\n') || current === '' ? '' : ' '}${token}`)} className="rounded-full border border-border px-2 py-0.5 text-xs hover:bg-muted">
-                    {placeholderLabel}
-                  </button>
-                ))}
-              </div>
+              <details className="group rounded-lg border border-border px-3 py-2" data-testid="layout-details">
+                <summary className="cursor-pointer text-sm font-medium">Customize the caption layout</summary>
+                <div className="mt-3 space-y-2">
+                  <Field label="Layout" hint="Most people never need this. The example on the right updates as you type.">
+                    <TextArea value={template} onChange={(event) => setTemplate(event.target.value)} rows={4} data-testid="template-input" />
+                  </Field>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-xs text-muted-foreground">Insert:</span>
+                    {placeholders.map(({ token, label: placeholderLabel }) => (
+                      <button key={token} type="button" onClick={() => setTemplate((current) => `${current}${current.endsWith('\n') || current === '' ? '' : ' '}${token}`)} className="rounded-full border border-border px-2 py-0.5 text-xs hover:bg-muted">
+                        {placeholderLabel}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </details>
               <Field label="Hashtags for this platform" hint="Separate with spaces. Ones already in your caption aren't repeated.">
                 <TextInput value={hashtagText} onChange={(event) => setHashtagText(event.target.value)} placeholder="#art #studio" data-testid="hashtags-input" />
               </Field>

@@ -1,4 +1,5 @@
-# Fanout: `docker compose up --build`, then open http://localhost:8080 and drop a video into ./hub.
+# Fanout: `docker compose up --build`, open http://localhost:8080, log in (see README) and upload a video.
+# On a server, deploy/install.sh writes a .env with real secrets and a public address, then runs this same file.
 # Every default here is for local development. For anything public, copy .env.example to .env and set real secrets.
 name: fanout
 
@@ -14,8 +15,11 @@ x-application-environment: &application-environment
   S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-fanout}
   S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-fanout-development-secret}
   S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
-  # Development-only default; the app refuses it when NODE_ENV=production.
+  # Development-only defaults; the app refuses them when NODE_ENV=production.
   TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY:-ZmFub3V0LWRldmVsb3BtZW50LW9ubHkta2V5LTMyYic=}
+  AUTH_SECRET: ${AUTH_SECRET:-fanout-development-only-auth-secret-change-me}
+  PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8080}
+  MAXIMUM_UPLOAD_MEGABYTES: ${MAXIMUM_UPLOAD_MEGABYTES:-2048}
   PUBLISH_DRY_RUN: ${PUBLISH_DRY_RUN:-true}
   ENABLE_HUB_FOLDER: ${ENABLE_HUB_FOLDER:-true}
   HUB_DIRECTORY: /hub
@@ -55,7 +59,8 @@ services:
     environment:
       AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-fanout}
       AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-fanout-development-secret}
-    ports: ['${S3_PORT:-8333}:8333']
+    # Only reachable from this machine; the public reaches stored videos through Caddy's read-only media address.
+    ports: ['127.0.0.1:${S3_PORT:-8333}:8333']
     volumes: [s3-data:/data]
     healthcheck:
       test: [CMD, nc, -z, localhost, '8333']
@@ -93,6 +98,7 @@ services:
     build: { context: ., target: web }
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+      MEDIA_ADDRESS: ${MEDIA_ADDRESS:-:8081}
     ports: ['${HTTP_PORT:-8080}:80', '${HTTPS_PORT:-8443}:443']
     volumes: [caddy-data:/data]
     depends_on: [api]

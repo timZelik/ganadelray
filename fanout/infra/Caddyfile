@@ -1,5 +1,5 @@
-# SITE_ADDRESS=":80" (default) serves plain HTTP on the mapped port.
-# SITE_ADDRESS="fanout.example.com" makes Caddy obtain and renew a certificate automatically (HTTPS).
+# SITE_ADDRESS=":80" (default) serves plain HTTP on the mapped port, for local development.
+# SITE_ADDRESS="fanout-203-0-113-5.sslip.io" (any public hostname) makes Caddy obtain and renew HTTPS certificates automatically.
 {$SITE_ADDRESS::80} {
 	encode zstd gzip
 
@@ -16,4 +16,14 @@
 		try_files {path} /index.html
 		file_server
 	}
+}
+
+# Public, read-only door to stored videos, so Buffer and the platforms can download them.
+# Every link is a presigned URL that expires; anything other than GET/HEAD is refused.
+{$MEDIA_ADDRESS::8081} {
+	@read method GET HEAD
+	handle @read {
+		reverse_proxy s3:8333
+	}
+	respond 403
 }

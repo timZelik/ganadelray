@@ -1,7 +1,9 @@
 import { rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { loadEnvironment } from '@fanout/config';
-import { createDatabase, createRepositories, createTokenCipher, runMigrations, seedDefaults, type PublishJobSummary } from '@fanout/database';
+import { randomUUID } from 'node:crypto';
+import { createDatabase, createRepositories, createTokenCipher, runMigrations, seedDefaults, uploadAccountHandle, type PublishJobSummary } from '@fanout/database';
+import { storageKeys } from '@fanout/storage';
 import { createTemporaryDirectory, createSilentLogger, createTestVideo, startPostgresContainer, startRedisContainer, startS3Container, buildTestEnvironment, type StartedPostgreSqlContainer, type StartedS3, type StartedTestContainer } from '@fanout/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startWorker, type RunningWorker } from '../src/bootstrap.ts';
@@ -84,6 +86,23 @@ describe('hub folder → watcher → media → publish (dry run)', () => {
     await dropIntoHub('after-broken.mp4', 4);
     await waitForSettledJobs('after broken', 4);
     expect(await jobsForTitle('broken')).toEqual([]);
+  });
+
+  it('processes a browser upload: practice posts on every platform, a thumbnail, and the temporary upload removed', async () => {
+    const { connectionRepository, sourceItemRepository } = worker.dependencies.repositories;
+    const uploadConnection = (await connectionRepository.findByPlatformAndHandle('upload', uploadAccountHandle))!;
+    const exportDirectory = await createTemporaryDirectory('fanout-upload-');
+    const videoPath = await createTestVideo(exportDirectory, { width: 1920, height: 1080, durationSeconds: 4, fileName: 'studio-tour.mov' });
+    const uploadId = randomUUID();
+    const storageKey = storageKeys.upload(uploadId, '.mov');
+    await worker.dependencies.storage.uploadFile(storageKey, videoPath, 'video/quicktime');
+    await worker.dependencies.queues.enqueueIngest({ connectionId: uploadConnection.id, candidate: { externalId: uploadId, title: 'studio tour', originalCaption: 'Inside the studio', detectedAt: new Date().toISOString(), locator: { storageKey, fileName: 'studio-tour.mov' } } });
+    const jobs = await waitForSettledJobs('studio tour', 4);
+    expect(jobs.every((job) => job.status === 'published' && job.dryRun && job.publisherRoute === 'console')).toBe(true);
+    const sourceItem = (await sourceItemRepository.findByExternalId(uploadConnection.id, uploadId))!;
+    expect(await worker.dependencies.storage.objectExists(sourceItem.thumbnailStorageKey!)).toBe(true);
+    expect(await worker.dependencies.storage.objectExists(storageKey)).toBe(false);
+    expect(await worker.dependencies.queues.findIngestOutcome(uploadConnection.id, uploadId)).toEqual({ state: 'done', sourceItemId: sourceItem.id });
   });
 
   it('never creates duplicate jobs when the same item is seen again', async () => {
