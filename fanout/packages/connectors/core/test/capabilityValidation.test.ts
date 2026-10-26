@@ -1,12 +1,10 @@
 import { destinationCapabilities, type MediaMetadata } from '@fanout/domain';
+import { buildMediaMetadata } from '@fanout/testing';
 import { describe, expect, it } from 'vitest';
 import { countHashtags } from '@fanout/domain';
 import { validateAgainstCapabilities, type PreparedAsset } from '../src/index.ts';
 
-const metadata: MediaMetadata = {
-  formatName: 'mov,mp4,m4a,3gp,3g2,mj2', majorBrand: 'isom', durationSeconds: 30, sizeBytes: 10_000_000, width: 1080, height: 1920, rotationDegrees: 0, frameRate: 30,
-  videoCodec: 'h264', videoProfile: 'High', pixelFormat: 'yuv420p', audioCodec: 'aac', audioSampleRateHz: 48_000, hasFastStart: true,
-};
+const metadata = buildMediaMetadata({ durationSeconds: 30, sizeBytes: 10_000_000 });
 
 function asset(overrides: Partial<MediaMetadata> = {}, publicUrl: string | null = 'https://cdn.test/a.mp4'): PreparedAsset {
   return { assetId: 'asset-1', storageKey: 'k', metadata: { ...metadata, ...overrides }, publicUrl, openReadStream: async () => new ReadableStream() };

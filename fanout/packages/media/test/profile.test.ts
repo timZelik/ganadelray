@@ -1,13 +1,11 @@
-import { destinationCapabilities, type MediaMetadata } from '@fanout/domain';
+import { destinationCapabilities } from '@fanout/domain';
+import { buildMediaMetadata } from '@fanout/testing';
 import { describe, expect, it } from 'vitest';
 import { assertUsableMaster, buildRenderArguments, chooseOutputFrameRate, computeRenderFingerprint, findProfileViolations, mediaProfileOverrideSchema, resolveMediaProfile } from '../src/index.ts';
 
 const reelsProfile = resolveMediaProfile(destinationCapabilities.instagram_reels, 'pad');
 
-const conformingMetadata: MediaMetadata = {
-  formatName: 'mov,mp4,m4a,3gp,3g2,mj2', majorBrand: 'isom', durationSeconds: 20, sizeBytes: 5_000_000, width: 1080, height: 1920, rotationDegrees: 0,
-  frameRate: 30, videoCodec: 'h264', videoProfile: 'High', pixelFormat: 'yuv420p', audioCodec: 'aac', audioSampleRateHz: 48_000, hasFastStart: true,
-};
+const conformingMetadata = buildMediaMetadata({ durationSeconds: 20, sizeBytes: 5_000_000 });
 
 describe('resolveMediaProfile', () => {
   it('derives a vertical 1080×1920 H.264 High / AAC 48kHz target from capabilities', () => {
