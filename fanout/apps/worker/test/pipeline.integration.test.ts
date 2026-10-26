@@ -49,7 +49,7 @@ afterAll(async () => {
 });
 
 describe('hub folder → watcher → media → publish (dry run)', () => {
-  it('turns one dropped video into four normalized assets and four dry-run publish jobs', async () => {
+  it('turns one dropped video into four normalized assets (one shared encode) and four dry-run publish jobs', async () => {
     await dropIntoHub('morning-routine.mp4', 4, 'Morning routine that changed everything https://example.com #habits');
     const jobs = await waitForSettledJobs('morning routine', 4);
     expect(jobs.map((job) => [job.destinationKind, job.status, job.dryRun])).toEqual(expect.arrayContaining([
@@ -61,6 +61,7 @@ describe('hub folder → watcher → media → publish (dry run)', () => {
 
     const { assetRepository } = worker.dependencies.repositories;
     const assets = await Promise.all(jobs.map((job) => assetRepository.findLiveForDestination(job.sourceItemId, job.workflowDestinationId, new Date())));
+    expect(new Set(assets.map((asset) => asset!.storageKey)).size).toBe(1);
     for (const asset of assets) {
       expect(asset!.metadata).toMatchObject({ width: 1080, height: 1920, videoCodec: 'h264', videoProfile: 'High', audioCodec: 'aac', audioSampleRateHz: 48_000, hasFastStart: true });
       expect(await worker.dependencies.storage.objectExists(asset!.storageKey)).toBe(true);

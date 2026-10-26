@@ -3,7 +3,7 @@ import { createLogger } from '@fanout/logging';
 import { startWorker } from './bootstrap.ts';
 
 const environment = loadEnvironment();
-const logger = createLogger({ serviceName: 'fanout-worker', level: environment.LOG_LEVEL, pretty: environment.NODE_ENV === 'development' });
+const logger = createLogger({ serviceName: 'fanout-worker', level: environment.LOG_LEVEL, pretty: environment.LOG_PRETTY });
 const runningWorker = await startWorker(environment, logger);
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {

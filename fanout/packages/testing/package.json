@@ -14,7 +14,6 @@
     "pino": "^10.4.0",
     "vitest": "^5.0.5",
     "@fanout/domain": "workspace:*",
-    "@fanout/storage": "workspace:*",
     "msw": "^3.0.3",
     "testcontainers": "^12.2.1",
     "@testcontainers/postgresql": "^12.2.1"

@@ -31,6 +31,28 @@ async function renderAndStore(dependencies: WorkerDependencies, { sourceItem }: 
   });
 }
 
+const lockPollMilliseconds = 1_000;
+const minimumRenderLockMilliseconds = 5 * 60 * 1000;
+const renderLockPerSourceSecondMilliseconds = 30_000;
+
+/**
+ * Another destination's identical render, or a fresh one. Concurrent prepare jobs for the same output
+ * serialize on a per-fingerprint lock: the winner encodes, the rest wait and reuse its file.
+ * A crashed holder's lock expires, so waiting is bounded.
+ */
+async function obtainRenderedFile(dependencies: WorkerDependencies, context: PublishJobContext, profile: MediaProfile, renderFingerprint: string): Promise<RenderedFile> {
+  const { assetRepository } = dependencies.repositories;
+  const lockMilliseconds = Math.max(minimumRenderLockMilliseconds, context.sourceItem.durationSeconds * renderLockPerSourceSecondMilliseconds);
+  const findShared = () => assetRepository.findLiveByFingerprint(context.sourceItem.id, renderFingerprint, dependencies.now());
+  for (;;) {
+    const shared = await findShared();
+    if (shared) return shared;
+    const attempt = await dependencies.renderLock.runExclusive(`render-${renderFingerprint}`, lockMilliseconds, async () => (await findShared()) ?? renderAndStore(dependencies, context, profile, renderFingerprint));
+    if (attempt.acquired) return attempt.result;
+    await new Promise((resolve) => setTimeout(resolve, lockPollMilliseconds));
+  }
+}
+
 /**
  * Ensures this destination has a live asset matching its profile, cheapest path first:
  * its own existing asset → another destination's identical render → a fresh render.
@@ -40,11 +62,10 @@ export async function ensureRenditionAsset(dependencies: WorkerDependencies, con
   const now = dependencies.now();
   const { sourceItem, destination } = context;
   const profile = profileFor(context);
-  const renderFingerprint = computeRenderFingerprint(sourceItem.masterChecksum, profile);
+  const renderFingerprint = computeRenderFingerprint(sourceItem.masterChecksum, profile, sourceItem.masterMetadata);
   const ownAsset = await assetRepository.findLiveForDestination(sourceItem.id, destination.id, now);
   if (ownAsset?.renderFingerprint === renderFingerprint) return ownAsset;
-  const sharedAsset = await assetRepository.findLiveByFingerprint(sourceItem.id, renderFingerprint, now);
-  const renderedFile = sharedAsset ?? (await renderAndStore(dependencies, context, profile, renderFingerprint));
+  const renderedFile = await obtainRenderedFile(dependencies, context, profile, renderFingerprint);
   return assetRepository.upsertForDestination({
     sourceItemId: sourceItem.id,
     workflowDestinationId: destination.id,

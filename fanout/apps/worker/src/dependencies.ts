@@ -3,7 +3,7 @@ import type { ConnectorRegistry } from '@fanout/connectors-core';
 import type { Repositories } from '@fanout/database';
 import type { Logger } from '@fanout/logging';
 import type { MediaToolPaths } from '@fanout/media';
-import type { PipelineQueues, RateLimiter } from '@fanout/queue';
+import type { DistributedLock, PipelineQueues, RateLimiter } from '@fanout/queue';
 import type { ObjectStorage } from '@fanout/storage';
 
 export interface PipelineSettings {
@@ -23,6 +23,8 @@ export interface WorkerDependencies {
   queues: PipelineQueues;
   registry: ConnectorRegistry;
   rateLimiter: RateLimiter;
+  /** Ensures concurrent prepare jobs never encode the same output twice. */
+  renderLock: DistributedLock;
   captionRewriter: CaptionRewriter;
   logger: Logger;
   settings: PipelineSettings;

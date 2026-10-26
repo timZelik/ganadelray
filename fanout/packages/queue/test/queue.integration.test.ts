@@ -3,7 +3,7 @@ import { startRedisContainer, type StartedTestContainer } from '@fanout/testing'
 import { Queue, Worker, type Job } from 'bullmq';
 import type { Redis } from 'ioredis';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createPipelineQueues, createRateLimiter, createRedisConnection, delayJobUntil, retryAfterAwareBackoff, runWithErrorPolicy, type FinalFailure, type PipelineQueues } from '../src/index.ts';
+import { createDistributedLock, createPipelineQueues, createRateLimiter, createRedisConnection, delayJobUntil, retryAfterAwareBackoff, runWithErrorPolicy, type FinalFailure, type PipelineQueues } from '../src/index.ts';
 
 let container: StartedTestContainer;
 let redis: Redis;
@@ -95,5 +95,30 @@ describe('pipeline queues', () => {
 
   it('delayJobUntil is exported for rate-limit parking', () => {
     expect(typeof delayJobUntil).toBe('function');
+  });
+});
+
+describe('distributed lock', () => {
+  it('lets exactly one concurrent caller run, and frees the lock afterwards', async () => {
+    const lock = createDistributedLock(redis);
+    let running = 0;
+    let maximumConcurrency = 0;
+    const work = async () => {
+      running += 1;
+      maximumConcurrency = Math.max(maximumConcurrency, running);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      running -= 1;
+      return 'rendered';
+    };
+    const attempts = await Promise.all([1, 2, 3].map(() => lock.runExclusive('render-x', 10_000, work)));
+    expect(attempts.filter((attempt) => attempt.acquired)).toEqual([{ acquired: true, result: 'rendered' }]);
+    expect(maximumConcurrency).toBe(1);
+    expect((await lock.runExclusive('render-x', 10_000, work)).acquired).toBe(true);
+  });
+
+  it('releases the lock when the work throws', async () => {
+    const lock = createDistributedLock(redis);
+    await expect(lock.runExclusive('render-y', 10_000, async () => { throw new Error('ffmpeg crashed'); })).rejects.toThrow('ffmpeg crashed');
+    expect((await lock.runExclusive('render-y', 10_000, async () => 'ok')).acquired).toBe(true);
   });
 });

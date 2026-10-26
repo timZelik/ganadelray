@@ -1,0 +1,48 @@
+name: fanout CI
+
+on:
+  push:
+    paths: ['fanout/**', '.github/workflows/fanout-ci.yml']
+  pull_request:
+    paths: ['fanout/**', '.github/workflows/fanout-ci.yml']
+
+concurrency:
+  group: fanout-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: fanout
+
+jobs:
+  checks:
+    name: Lint, typecheck, unit + contract, end-to-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with: { package_json_file: fanout/package.json }
+      - uses: actions/setup-node@v5
+        with: { node-version: 24, cache: pnpm, cache-dependency-path: fanout/pnpm-lock.yaml }
+      - run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends ffmpeg
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm --filter @fanout/web exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+
+  integration:
+    name: 'Integration (Testcontainers: Postgres, Valkey, S3)'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with: { package_json_file: fanout/package.json }
+      - uses: actions/setup-node@v5
+        with: { node-version: 24, cache: pnpm, cache-dependency-path: fanout/pnpm-lock.yaml }
+      - run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends ffmpeg
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:integration

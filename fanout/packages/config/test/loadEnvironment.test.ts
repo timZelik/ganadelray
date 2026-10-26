@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { loadEnvironment } from '../src/index.ts';
+import { developmentOnlyEncryptionKey, loadEnvironment } from '../src/index.ts';
 
 const minimalEnvironment = {
   DATABASE_URL: 'postgres://fanout:fanout@localhost:5432/fanout',
@@ -20,6 +20,12 @@ describe('loadEnvironment', () => {
 
   it('parses "false" as false rather than as a truthy string', () => {
     expect(loadEnvironment({ ...minimalEnvironment, PUBLISH_DRY_RUN: 'false' }).PUBLISH_DRY_RUN).toBe(false);
+  });
+
+  it('refuses the published development key in production', () => {
+    const withDevelopmentKey = { ...minimalEnvironment, TOKEN_ENCRYPTION_KEY: developmentOnlyEncryptionKey };
+    expect(loadEnvironment(withDevelopmentKey).TOKEN_ENCRYPTION_KEY).toBe(developmentOnlyEncryptionKey);
+    expect(() => loadEnvironment({ ...withDevelopmentKey, NODE_ENV: 'production' })).toThrow(/must not be used in production/);
   });
 
   it('rejects an encryption key that is not 32 bytes', () => {

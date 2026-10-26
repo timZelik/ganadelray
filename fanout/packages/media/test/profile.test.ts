@@ -1,7 +1,7 @@
 import { destinationCapabilities } from '@fanout/domain';
 import { buildMediaMetadata } from '@fanout/testing';
 import { describe, expect, it } from 'vitest';
-import { assertUsableMaster, buildRenderArguments, chooseOutputFrameRate, computeRenderFingerprint, findProfileViolations, mediaProfileOverrideSchema, resolveMediaProfile } from '../src/index.ts';
+import { assertUsableMaster, buildRenderArguments, chooseOutputFrameRate, computeRenderFingerprint, describeRenderOutput, findProfileViolations, mediaProfileOverrideSchema, resolveMediaProfile } from '../src/index.ts';
 
 const reelsProfile = resolveMediaProfile(destinationCapabilities.instagram_reels, 'pad');
 
@@ -22,11 +22,24 @@ describe('resolveMediaProfile', () => {
 });
 
 describe('computeRenderFingerprint', () => {
-  it('is equal for identical profiles regardless of key order, and differs when a parameter changes', () => {
+  const landscapeMaster = buildMediaMetadata({ width: 1920, height: 1080 });
+
+  it('is stable regardless of key order, and changes when an output-affecting parameter changes', () => {
     const reordered = Object.fromEntries(Object.entries(reelsProfile).reverse()) as typeof reelsProfile;
-    expect(computeRenderFingerprint('master', reordered)).toBe(computeRenderFingerprint('master', reelsProfile));
-    expect(computeRenderFingerprint('master', { ...reelsProfile, fitMode: 'crop' })).not.toBe(computeRenderFingerprint('master', reelsProfile));
-    expect(computeRenderFingerprint('other-master', reelsProfile)).not.toBe(computeRenderFingerprint('master', reelsProfile));
+    expect(computeRenderFingerprint('master', reordered, landscapeMaster)).toBe(computeRenderFingerprint('master', reelsProfile, landscapeMaster));
+    expect(computeRenderFingerprint('master', { ...reelsProfile, fitMode: 'crop' }, landscapeMaster)).not.toBe(computeRenderFingerprint('master', reelsProfile, landscapeMaster));
+    expect(computeRenderFingerprint('other-master', reelsProfile, landscapeMaster)).not.toBe(computeRenderFingerprint('master', reelsProfile, landscapeMaster));
+  });
+
+  it('lets platforms whose encodes would be identical share one render despite different caps', () => {
+    const fingerprints = (['instagram_reels', 'tiktok', 'youtube_shorts', 'linkedin'] as const).map((kind) =>
+      computeRenderFingerprint('master', resolveMediaProfile(destinationCapabilities[kind], 'pad'), landscapeMaster));
+    expect(new Set(fingerprints).size).toBe(1);
+  });
+
+  it('separates a passthrough of a conforming master from an encode', () => {
+    expect(describeRenderOutput(reelsProfile, conformingMetadata)).toEqual({ output: 'passthrough' });
+    expect(describeRenderOutput(reelsProfile, { ...conformingMetadata, frameRate: 60 })).toMatchObject({ output: 'encode', outputFrameRate: 30 });
   });
 });
 

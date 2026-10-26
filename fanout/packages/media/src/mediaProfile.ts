@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import type { FitMode, Orientation, PublisherCapabilities } from '@fanout/domain';
 import { z } from 'zod';
 
@@ -60,13 +59,4 @@ export function resolveMediaProfile(capabilities: PublisherCapabilities, fitMode
     fitMode,
     maximumFileSizeBytes: capabilities.maximumFileSizeBytes,
   };
-}
-
-function canonicalJson(value: object): string {
-  return JSON.stringify(Object.fromEntries(Object.entries(value).sort(([left], [right]) => left.localeCompare(right))));
-}
-
-/** Same master + same profile parameters ⇒ same fingerprint ⇒ the render is reused instead of re-encoded. */
-export function computeRenderFingerprint(masterChecksum: string, profile: MediaProfile): string {
-  return createHash('sha256').update(masterChecksum).update('\u0000').update(canonicalJson(profile)).digest('hex');
 }

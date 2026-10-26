@@ -358,9 +358,6 @@ importers:
       '@fanout/logging':
         specifier: workspace:*
         version: link:../logging
-      '@fanout/storage':
-        specifier: workspace:*
-        version: link:../storage
       '@testcontainers/postgresql':
         specifier: ^12.2.1
         version: 12.2.1

@@ -5,7 +5,7 @@ import { createPipelineQueues, createRedisConnection } from '@fanout/queue';
 import { buildApiServer } from './server.ts';
 
 const environment = loadEnvironment();
-const logger = createLogger({ serviceName: 'fanout-api', level: environment.LOG_LEVEL, pretty: environment.NODE_ENV === 'development' });
+const logger = createLogger({ serviceName: 'fanout-api', level: environment.LOG_LEVEL, pretty: environment.LOG_PRETTY });
 const databaseHandle = createDatabase(environment.DATABASE_URL);
 const redis = createRedisConnection(environment.REDIS_URL);
 const queues = createPipelineQueues(redis);

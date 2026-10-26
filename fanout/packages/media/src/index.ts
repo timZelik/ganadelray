@@ -7,3 +7,4 @@ export * from './ffmpegArguments.ts';
 export * from './masterValidation.ts';
 export * from './checksum.ts';
 export * from './renderer.ts';
+export * from './renderFingerprint.ts';

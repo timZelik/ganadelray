@@ -1,0 +1,19 @@
+# SITE_ADDRESS=":80" (default) serves plain HTTP on the mapped port.
+# SITE_ADDRESS="fanout.example.com" makes Caddy obtain and renew a certificate automatically (HTTPS).
+{$SITE_ADDRESS::80} {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy api:3000
+	}
+
+	handle /admin/* {
+		reverse_proxy api:3000
+	}
+
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

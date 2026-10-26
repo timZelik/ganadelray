@@ -3,7 +3,7 @@ import type { Environment } from '@fanout/config';
 import { createConnectorRegistry } from '@fanout/connectors-core';
 import { createDatabase, createRepositories, createTokenCipher, ensureDefaultHubWorkflow } from '@fanout/database';
 import type { Logger } from '@fanout/logging';
-import { createPipelineQueues, createRateLimiter, createRedisConnection } from '@fanout/queue';
+import { createDistributedLock, createPipelineQueues, createRateLimiter, createRedisConnection } from '@fanout/queue';
 import { createS3ObjectStorage } from '@fanout/storage';
 import { installedConnectorModules } from './connectorModules.ts';
 import type { WorkerDependencies } from './dependencies.ts';
@@ -39,6 +39,7 @@ export async function startWorker(environment: Environment, logger: Logger): Pro
     queues: createPipelineQueues(redis),
     registry: createConnectorRegistry(installedConnectorModules({ hubSettleMilliseconds: environment.HUB_SETTLE_SECONDS * 1000 })),
     rateLimiter: createRateLimiter(redis),
+    renderLock: createDistributedLock(redis),
     captionRewriter: noopCaptionRewriter,
     now: () => new Date(),
     settings: {

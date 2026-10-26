@@ -8,9 +8,13 @@ const base64EncryptionKey = z
   .string()
   .refine((value) => Buffer.from(value, 'base64').length === 32, 'TOKEN_ENCRYPTION_KEY must be 32 bytes, base64-encoded (openssl rand -base64 32)');
 
+/** Published in docker-compose.yml so a clean clone runs; refused in production. */
+export const developmentOnlyEncryptionKey = 'ZmFub3V0LWRldmVsb3BtZW50LW9ubHkta2V5LTMyYic=';
+
 export const environmentSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+  LOG_PRETTY: booleanFromString.default(false),
 
   DATABASE_URL: z.url(),
   REDIS_URL: z.url(),
@@ -43,6 +47,9 @@ export const environmentSchema = z.object({
 
   FFMPEG_PATH: z.string().default('ffmpeg'),
   FFPROBE_PATH: z.string().default('ffprobe'),
+}).refine((environment) => !(environment.NODE_ENV === 'production' && environment.TOKEN_ENCRYPTION_KEY === developmentOnlyEncryptionKey), {
+  path: ['TOKEN_ENCRYPTION_KEY'],
+  message: 'The development-only key from docker-compose.yml must not be used in production; generate one with: openssl rand -base64 32',
 });
 
 export type Environment = z.infer<typeof environmentSchema>;

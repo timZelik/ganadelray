@@ -1,0 +1,104 @@
+# Fanout: `docker compose up --build`, then open http://localhost:8080 and drop a video into ./hub.
+# Every default here is for local development. For anything public, copy .env.example to .env and set real secrets.
+name: fanout
+
+x-application-environment: &application-environment
+  NODE_ENV: ${NODE_ENV:-development}
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  DATABASE_URL: postgres://fanout:${POSTGRES_PASSWORD:-fanout}@postgres:5432/fanout
+  REDIS_URL: redis://redis:6379
+  S3_ENDPOINT: ${S3_ENDPOINT:-http://s3:8333}
+  S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-http://localhost:8333}
+  S3_REGION: ${S3_REGION:-us-east-1}
+  S3_BUCKET: ${S3_BUCKET:-fanout}
+  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-fanout}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-fanout-development-secret}
+  S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
+  # Development-only default; the app refuses it when NODE_ENV=production.
+  TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY:-ZmFub3V0LWRldmVsb3BtZW50LW9ubHkta2V5LTMyYic=}
+  PUBLISH_DRY_RUN: ${PUBLISH_DRY_RUN:-true}
+  HUB_DIRECTORY: /hub
+  WATCH_INTERVAL_SECONDS: ${WATCH_INTERVAL_SECONDS:-10}
+  RENDERED_ASSET_RETENTION_DAYS: ${RENDERED_ASSET_RETENTION_DAYS:-7}
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: fanout
+      POSTGRES_USER: fanout
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fanout}
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U fanout -d fanout]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: valkey/valkey:8-alpine
+    # BullMQ needs persistence and must never have its keys evicted.
+    command: [valkey-server, --appendonly, 'yes', --maxmemory-policy, noeviction]
+    volumes: [redis-data:/data]
+    healthcheck:
+      test: [CMD, valkey-cli, ping]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # S3-compatible storage for development. MinIO stopped publishing community images in 2025, so this is SeaweedFS.
+  # In production point the S3_* variables at Cloudflare R2 and remove this service.
+  s3:
+    image: chrislusf/seaweedfs:4.50
+    command: [mini, -dir=/data]
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-fanout}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-fanout-development-secret}
+    ports: ['${S3_PORT:-8333}:8333']
+    volumes: [s3-data:/data]
+    healthcheck:
+      test: [CMD, nc, -z, localhost, '8333']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  migrate:
+    build: { context: ., target: api }
+    command: [node, packages/database/src/scripts/migrate.ts]
+    environment: *application-environment
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  api:
+    build: { context: ., target: api }
+    environment: *application-environment
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+
+  worker:
+    build: { context: ., target: worker }
+    environment: *application-environment
+    volumes: ['./hub:/hub:ro']
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+      s3: { condition: service_healthy }
+    restart: unless-stopped
+    stop_grace_period: 60s
+
+  web:
+    build: { context: ., target: web }
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    ports: ['${HTTP_PORT:-8080}:80', '${HTTPS_PORT:-8443}:443']
+    volumes: [caddy-data:/data]
+    depends_on: [api]
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  redis-data:
+  s3-data:
+  caddy-data:
