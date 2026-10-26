@@ -12,18 +12,24 @@
     "start": "node src/main.ts"
   },
   "dependencies": {
-    "@fanout/domain": "workspace:*",
-    "@fanout/config": "workspace:*",
-    "@fanout/logging": "workspace:*",
-    "@fanout/database": "workspace:*",
-    "@fanout/queue": "workspace:*",
-    "@fanout/api-contract": "workspace:*",
-    "fastify": "^5.12.7",
-    "fastify-type-provider-zod": "^7.0.0",
     "@bull-board/api": "^9.10.5",
     "@bull-board/fastify": "^9.10.5",
+    "@fanout/api-contract": "workspace:*",
+    "@fanout/config": "workspace:*",
+    "@fanout/database": "workspace:*",
+    "@fanout/domain": "workspace:*",
+    "@fanout/logging": "workspace:*",
+    "@fanout/queue": "workspace:*",
+    "@fanout/storage": "workspace:*",
+    "@fastify/multipart": "^10.1.6",
+    "better-auth": "^1.7.13",
+    "bullmq": "^6.4.2",
+    "fastify": "^5.12.7",
+    "fastify-type-provider-zod": "^7.0.0",
     "zod": "^4.6.7",
-    "bullmq": "^6.4.2"
+    "@fanout/connector-buffer": "workspace:*",
+    "@fanout/connectors-core": "workspace:*",
+    "@fanout/captions": "workspace:*"
   },
   "devDependencies": {
     "@fanout/testing": "workspace:*"

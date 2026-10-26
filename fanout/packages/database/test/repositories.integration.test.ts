@@ -2,7 +2,7 @@ import { planPublishJobs } from '@fanout/domain';
 import { buildMediaMetadata, startPostgresContainer, testEncryptionKey, type StartedPostgreSqlContainer } from '@fanout/testing';
 import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createDatabase, createRepositories, createTokenCipher, ensureDefaultHubWorkflow, runMigrations, type DatabaseHandle, type Repositories } from '../src/index.ts';
+import { createDatabase, createRepositories, createTokenCipher, ensureDefaultHubWorkflow, runMigrations, seedDefaults, uploadWorkflowName, type DatabaseHandle, type Repositories } from '../src/index.ts';
 
 let container: StartedPostgreSqlContainer;
 let handle: DatabaseHandle;
@@ -21,15 +21,24 @@ afterAll(async () => {
 });
 
 async function seedSourceItem(externalId: string) {
-  const { hubConnection, workflow } = await ensureDefaultHubWorkflow(repositories, '/hub');
+  const { sourceConnection: hubConnection, workflow } = await ensureDefaultHubWorkflow(repositories, '/hub');
   const { sourceItem } = await repositories.sourceItemRepository.insertIfAbsent({
     sourceConnectionId: hubConnection.id, externalId, detectedAt: new Date(), title: 'Clip', originalCaption: 'Caption',
-    durationSeconds: 12, masterStorageKey: `masters/${externalId}.mp4`, masterChecksum: `checksum-${externalId}`, masterMetadata: buildMediaMetadata(),
+    durationSeconds: 12, masterStorageKey: `masters/${externalId}.mp4`, masterChecksum: `checksum-${externalId}`, masterMetadata: buildMediaMetadata(), thumbnailStorageKey: null,
   });
   return { hubConnection, workflow, sourceItem };
 }
 
 describe('seed', () => {
+  it('seeds the browser-upload workflow (crop, practice mode) idempotently', async () => {
+    await seedDefaults(repositories, { hubDirectory: null });
+    await seedDefaults(repositories, { hubDirectory: null });
+    const uploadWorkflows = (await repositories.workflowRepository.listAll()).filter((workflow) => workflow.name === uploadWorkflowName);
+    expect(uploadWorkflows).toHaveLength(1);
+    expect(uploadWorkflows[0]).toMatchObject({ fitMode: 'crop', mode: 'auto_new' });
+    expect(uploadWorkflows[0]!.destinations.every((destination) => destination.publisherRoute === 'console')).toBe(true);
+  });
+
   it('creates the hub connection and a four-destination workflow exactly once', async () => {
     const first = await ensureDefaultHubWorkflow(repositories, '/hub');
     const second = await ensureDefaultHubWorkflow(repositories, '/hub');

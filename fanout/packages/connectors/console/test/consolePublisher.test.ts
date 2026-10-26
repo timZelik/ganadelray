@@ -9,7 +9,7 @@ const asset: PreparedAsset = {
   publicUrl: 'https://storage.test/renditions/item/fingerprint.mp4?X-Amz-Signature=secret', openReadStream: async () => new ReadableStream(),
 };
 const post = { caption: 'Hello #reels', title: null, hashtags: ['#reels'] };
-const context = (dryRun: boolean) => ({ dryRun, correlationId: 'correlation-1', logger: createSilentLogger(), http: { request: async () => { throw new Error('ConsolePublisher must not make HTTP calls'); } } });
+const context = (dryRun: boolean) => ({ dryRun, correlationId: 'correlation-1', logger: createSilentLogger(), http: { request: async () => { throw new Error('ConsolePublisher must not make HTTP calls'); } }, publisherSettings: {} });
 
 describe('ConsolePublisher', () => {
   it('registers a console route for every destination kind', () => {

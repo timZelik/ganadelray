@@ -37,3 +37,14 @@ describe('renderRendition', () => {
     expect(rendition).toMatchObject({ passedThrough: true, outputPath: inputPath, reasons: [] });
   });
 });
+
+describe('extractThumbnail', () => {
+  it('writes a small JPEG', { timeout: 30_000 }, async () => {
+    const { extractThumbnail } = await import('../src/index.ts');
+    const inputPath = await createTestVideo(directory, { durationSeconds: 1, fileName: 'for-thumbnail.mp4' });
+    const thumbnailPath = await extractThumbnail(inputPath, join(directory, 'thumbnail.jpg'), await probeMedia(inputPath));
+    const { readFile } = await import('node:fs/promises');
+    const bytes = await readFile(thumbnailPath);
+    expect(bytes.subarray(0, 2)).toEqual(Buffer.from([0xff, 0xd8]));
+  });
+});

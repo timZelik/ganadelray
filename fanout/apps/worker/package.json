@@ -24,7 +24,9 @@
     "@fanout/captions": "workspace:*",
     "@fanout/connectors-core": "workspace:*",
     "@fanout/connector-console": "workspace:*",
-    "@fanout/connector-local-folder": "workspace:*"
+    "@fanout/connector-local-folder": "workspace:*",
+    "@fanout/connector-buffer": "workspace:*",
+    "@fanout/connector-upload": "workspace:*"
   },
   "devDependencies": {
     "@fanout/testing": "workspace:*"

@@ -21,4 +21,6 @@ export interface SourceWatcher {
   listNewItemsSince(connection: Connection, cursor: unknown): Promise<WatchResult>;
   /** `null` when the source only exposes metadata (e.g. TikTok Display API) and the master arrives via the hub. */
   fetchMediaFile(connection: Connection, item: SourceItemCandidate): Promise<ReadableStream<Uint8Array> | null>;
+  /** Called once the master is safely stored, e.g. to remove a temporary upload. */
+  onIngested?(connection: Connection, item: SourceItemCandidate): Promise<void>;
 }

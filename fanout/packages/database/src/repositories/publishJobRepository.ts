@@ -79,6 +79,11 @@ export function createPublishJobRepository(database: Database) {
       const rows = await summaryQuery().where(status ? eq(publishJobs.status, status) : undefined).orderBy(desc(publishJobs.createdAt)).limit(limit);
       return rows.map(toSummary);
     },
+    async listSummariesForSourceItems(sourceItemIds: string[]): Promise<PublishJobSummary[]> {
+      if (sourceItemIds.length === 0) return [];
+      const rows = await summaryQuery().where(inArray(publishJobs.sourceItemId, sourceItemIds)).orderBy(publishJobs.createdAt);
+      return rows.map(toSummary);
+    },
     async findSummary(publishJobId: string): Promise<PublishJobSummary | null> {
       const [row] = await summaryQuery().where(eq(publishJobs.id, publishJobId));
       return row ? toSummary(row) : null;

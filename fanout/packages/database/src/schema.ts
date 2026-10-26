@@ -48,6 +48,7 @@ export const workflowDestinations = pgTable('workflow_destinations', {
   captionTemplate: text().notNull().default('{{originalCaption}}\n\n{{hashtags}}'),
   hashtags: text().array().notNull().default(sql`'{}'::text[]`),
   mediaProfileOverride: jsonb().$type<Record<string, unknown>>().notNull().default({}),
+  publisherSettings: jsonb().$type<Record<string, unknown>>().notNull().default({}),
   enabled: boolean().notNull().default(true),
   position: integer().notNull().default(0),
 }, (table) => [index().on(table.workflowId)]);
@@ -63,6 +64,7 @@ export const sourceItems = pgTable('source_items', {
   masterStorageKey: text().notNull(),
   masterChecksum: text().notNull(),
   masterMetadata: jsonb().$type<Record<string, unknown>>().notNull(),
+  thumbnailStorageKey: text(),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 }, (table) => [uniqueIndex().on(table.sourceConnectionId, table.externalId)]);
 
@@ -120,3 +122,4 @@ export const auditLogs = pgTable('audit_logs', {
   redactedResponseBody: jsonb(),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 }, (table) => [index().on(table.correlationId), index().on(table.createdAt)]);
+export * from './authSchema.ts';

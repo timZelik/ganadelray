@@ -1,7 +1,7 @@
 import { rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { loadEnvironment } from '@fanout/config';
-import { createDatabase, runMigrations, type PublishJobSummary } from '@fanout/database';
+import { createDatabase, createRepositories, createTokenCipher, runMigrations, seedDefaults, type PublishJobSummary } from '@fanout/database';
 import { createTemporaryDirectory, createSilentLogger, createTestVideo, startPostgresContainer, startRedisContainer, startS3Container, buildTestEnvironment, type StartedPostgreSqlContainer, type StartedS3, type StartedTestContainer } from '@fanout/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startWorker, type RunningWorker } from '../src/bootstrap.ts';
@@ -39,6 +39,7 @@ beforeAll(async () => {
   const environment = loadEnvironment(buildTestEnvironment({ databaseUrl: postgres.getConnectionUri(), redisUrl: startedRedis.url, s3 }, { HUB_DIRECTORY: hubDirectory, MEDIA_WORK_DIRECTORY: await createTemporaryDirectory('fanout-media-') }));
   const migrationHandle = createDatabase(environment.DATABASE_URL, 1);
   await runMigrations(migrationHandle.database);
+  await seedDefaults(createRepositories(migrationHandle.database, createTokenCipher(environment.TOKEN_ENCRYPTION_KEY)), { hubDirectory });
   await migrationHandle.close();
   worker = await startWorker(environment, createSilentLogger());
 });
@@ -91,6 +92,6 @@ describe('hub folder → watcher → media → publish (dry run)', () => {
     await worker.dependencies.repositories.watchCursorRepository.save(hub!.id, null);
     await new Promise((resolve) => setTimeout(resolve, 4_000));
     expect(await jobsForTitle('morning routine')).toHaveLength(4);
-    expect((await workflowRepository.listAll())).toHaveLength(1);
+    expect((await workflowRepository.listAll()).filter((workflow) => workflow.sourceConnectionId === hub!.id)).toHaveLength(1);
   });
 });

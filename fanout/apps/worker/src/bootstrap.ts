@@ -1,7 +1,7 @@
 import { noopCaptionRewriter } from '@fanout/captions';
 import type { Environment } from '@fanout/config';
 import { createConnectorRegistry } from '@fanout/connectors-core';
-import { createDatabase, createRepositories, createTokenCipher, ensureDefaultHubWorkflow } from '@fanout/database';
+import { createDatabase, createRepositories, createTokenCipher } from '@fanout/database';
 import type { Logger } from '@fanout/logging';
 import { createDistributedLock, createPipelineQueues, createRateLimiter, createRedisConnection } from '@fanout/queue';
 import { createS3ObjectStorage } from '@fanout/storage';
@@ -33,11 +33,10 @@ export async function startWorker(environment: Environment, logger: Logger): Pro
   });
   await storage.ensureBucket();
   const repositories = createRepositories(databaseHandle.database, createTokenCipher(environment.TOKEN_ENCRYPTION_KEY));
-  await ensureDefaultHubWorkflow(repositories, environment.HUB_DIRECTORY);
   const dependencies: WorkerDependencies = {
     repositories, storage, logger,
     queues: createPipelineQueues(redis),
-    registry: createConnectorRegistry(installedConnectorModules({ hubSettleMilliseconds: environment.HUB_SETTLE_SECONDS * 1000 })),
+    registry: createConnectorRegistry(installedConnectorModules({ hubSettleMilliseconds: environment.HUB_SETTLE_SECONDS * 1000, storage })),
     rateLimiter: createRateLimiter(redis),
     renderLock: createDistributedLock(redis),
     captionRewriter: noopCaptionRewriter,

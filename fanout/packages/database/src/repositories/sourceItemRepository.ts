@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import type { MediaMetadata, SourceItem } from '@fanout/domain';
 import type { Database } from '../client.ts';
 import { toSourceItem } from '../mappers.ts';
@@ -18,6 +18,10 @@ export function createSourceItemRepository(database: Database) {
     async findById(sourceItemId: string): Promise<SourceItem | null> {
       const row = await database.query.sourceItems.findFirst({ where: eq(sourceItems.id, sourceItemId) });
       return row ? toSourceItem(row) : null;
+    },
+    async listRecent(limit: number): Promise<SourceItem[]> {
+      const rows = await database.select().from(sourceItems).orderBy(desc(sourceItems.createdAt)).limit(limit);
+      return rows.map(toSourceItem);
     },
     async findByExternalId(sourceConnectionId: string, externalId: string): Promise<SourceItem | null> {
       const row = await database.query.sourceItems.findFirst({ where: and(eq(sourceItems.sourceConnectionId, sourceConnectionId), eq(sourceItems.externalId, externalId)) });

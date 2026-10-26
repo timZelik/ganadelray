@@ -1,5 +1,5 @@
 import { and, eq, inArray } from 'drizzle-orm';
-import type { DestinationKind, FitMode, PublisherRoute, ScheduleSlot, Workflow, WorkflowMode } from '@fanout/domain';
+import type { DestinationKind, FitMode, PublisherRoute, ScheduleSlot, Workflow, WorkflowDestination, WorkflowMode } from '@fanout/domain';
 import type { Database } from '../client.ts';
 import { toWorkflow } from '../mappers.ts';
 import { workflowDestinations, workflows } from '../schema.ts';
@@ -11,6 +11,7 @@ export interface NewWorkflowDestination {
   captionTemplate?: string;
   hashtags?: string[];
   mediaProfileOverride?: Record<string, unknown>;
+  publisherSettings?: Record<string, unknown>;
 }
 
 export interface NewWorkflow {
@@ -47,6 +48,12 @@ export function createWorkflowRepository(database: Database) {
     },
     async listEnabledForSource(sourceConnectionId: string): Promise<Workflow[]> {
       return hydrate(await database.select().from(workflows).where(and(eq(workflows.sourceConnectionId, sourceConnectionId), eq(workflows.enabled, true))));
+    },
+    async updateDestination(workflowDestinationId: string, changes: Partial<Pick<WorkflowDestination, 'enabled' | 'publisherRoute' | 'connectionId' | 'captionTemplate' | 'hashtags' | 'publisherSettings'>>): Promise<void> {
+      await database.update(workflowDestinations).set(changes).where(eq(workflowDestinations.id, workflowDestinationId));
+    },
+    async updateFitMode(workflowId: string, fitMode: FitMode): Promise<void> {
+      await database.update(workflows).set({ fitMode }).where(eq(workflows.id, workflowId));
     },
     async listSourceConnectionIdsWithEnabledWorkflows(): Promise<string[]> {
       const rows = await database.selectDistinct({ sourceConnectionId: workflows.sourceConnectionId }).from(workflows).where(eq(workflows.enabled, true));

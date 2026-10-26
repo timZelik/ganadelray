@@ -24,6 +24,8 @@ export interface PublishContext {
   logger: Logger;
   /** In dry-run mode this client records requests instead of sending them. */
   http: HttpClient;
+  /** The destination's route-specific settings, e.g. `{ channelId }` for Buffer. */
+  publisherSettings: Record<string, unknown>;
 }
 
 export type PublishOutcome = 'published' | 'processing' | 'dry_run';

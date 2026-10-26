@@ -36,6 +36,8 @@ export interface WorkflowDestination {
   captionTemplate: string;
   hashtags: string[];
   mediaProfileOverride: Record<string, unknown>;
+  /** Route-specific settings, e.g. which Buffer channel a destination posts to. */
+  publisherSettings: Record<string, unknown>;
   enabled: boolean;
 }
 
@@ -63,6 +65,7 @@ export interface SourceItem {
   masterStorageKey: string;
   masterChecksum: string;
   masterMetadata: MediaMetadata;
+  thumbnailStorageKey: string | null;
 }
 
 export interface Asset {

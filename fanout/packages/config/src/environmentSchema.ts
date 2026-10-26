@@ -10,6 +10,7 @@ const base64EncryptionKey = z
 
 /** Published in docker-compose.yml so a clean clone runs; refused in production. */
 export const developmentOnlyEncryptionKey = 'ZmFub3V0LWRldmVsb3BtZW50LW9ubHkta2V5LTMyYic=';
+export const developmentOnlyAuthSecret = 'fanout-development-only-auth-secret-change-me';
 
 export const environmentSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -28,10 +29,18 @@ export const environmentSchema = z.object({
   S3_FORCE_PATH_STYLE: booleanFromString.default(true),
 
   TOKEN_ENCRYPTION_KEY: base64EncryptionKey,
+  /** Signs login sessions. Generate: openssl rand -base64 32 */
+  AUTH_SECRET: z.string().min(32).default(developmentOnlyAuthSecret),
+  /** The address people open in their browser; login cookies are bound to it. */
+  PUBLIC_URL: z.url().default('http://localhost:8080'),
+  /** Largest video accepted from the browser upload. */
+  MAXIMUM_UPLOAD_MEGABYTES: z.coerce.number().int().positive().default(2048),
 
   API_HOST: z.string().default('0.0.0.0'),
   API_PORT: z.coerce.number().int().positive().default(3000),
 
+  /** Watch a local folder for new videos (developer workflow). Hosted installs use browser upload instead. */
+  ENABLE_HUB_FOLDER: booleanFromString.default(false),
   HUB_DIRECTORY: z.string().default('./hub'),
   WATCH_INTERVAL_SECONDS: z.coerce.number().int().positive().default(15),
   /** A hub file must be unchanged this long before ingest, so half-copied exports are skipped. */
@@ -47,9 +56,14 @@ export const environmentSchema = z.object({
 
   FFMPEG_PATH: z.string().default('ffmpeg'),
   FFPROBE_PATH: z.string().default('ffprobe'),
-}).refine((environment) => !(environment.NODE_ENV === 'production' && environment.TOKEN_ENCRYPTION_KEY === developmentOnlyEncryptionKey), {
-  path: ['TOKEN_ENCRYPTION_KEY'],
-  message: 'The development-only key from docker-compose.yml must not be used in production; generate one with: openssl rand -base64 32',
-});
+})
+  .refine((environment) => !(environment.NODE_ENV === 'production' && environment.TOKEN_ENCRYPTION_KEY === developmentOnlyEncryptionKey), {
+    path: ['TOKEN_ENCRYPTION_KEY'],
+    message: 'The development-only key from docker-compose.yml must not be used in production; generate one with: openssl rand -base64 32',
+  })
+  .refine((environment) => !(environment.NODE_ENV === 'production' && environment.AUTH_SECRET === developmentOnlyAuthSecret), {
+    path: ['AUTH_SECRET'],
+    message: 'Set AUTH_SECRET for production; generate one with: openssl rand -base64 32',
+  });
 
 export type Environment = z.infer<typeof environmentSchema>;

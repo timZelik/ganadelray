@@ -17,6 +17,7 @@ x-application-environment: &application-environment
   # Development-only default; the app refuses it when NODE_ENV=production.
   TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY:-ZmFub3V0LWRldmVsb3BtZW50LW9ubHkta2V5LTMyYic=}
   PUBLISH_DRY_RUN: ${PUBLISH_DRY_RUN:-true}
+  ENABLE_HUB_FOLDER: ${ENABLE_HUB_FOLDER:-true}
   HUB_DIRECTORY: /hub
   WATCH_INTERVAL_SECONDS: ${WATCH_INTERVAL_SECONDS:-10}
   RENDERED_ASSET_RETENTION_DAYS: ${RENDERED_ASSET_RETENTION_DAYS:-7}
