@@ -22,7 +22,8 @@
     "fastify-type-provider-zod": "^7.0.0",
     "@bull-board/api": "^9.10.5",
     "@bull-board/fastify": "^9.10.5",
-    "zod": "^4.6.7"
+    "zod": "^4.6.7",
+    "bullmq": "^6.4.2"
   },
   "devDependencies": {
     "@fanout/testing": "workspace:*"
