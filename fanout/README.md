@@ -6,6 +6,8 @@ Self-hosted content repurposing: watch a source, normalize each video per platfo
 
 ![Dashboard](docs/images/dashboard-phase-0.png)
 
+Watch the 2-minute demo recorded from the running app: [docs/fanout-phase-0-demo.mp4](docs/fanout-phase-0-demo.mp4).
+
 ## Quick start
 
 ```bash
