@@ -27,10 +27,16 @@ jobs:
         with: { package_json_file: fanout/package.json }
       - uses: actions/setup-node@v5
         with: { node-version: 24, cache: pnpm, cache-dependency-path: fanout/pnpm-lock.yaml }
-      # A stalled package mirror once hung a job until its timeout: fail fast and retry instead.
-      - run: printf 'Acquire::Retries "3";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\n' | sudo tee /etc/apt/apt.conf.d/80-fanout-retries
-      - run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends ffmpeg
-        timeout-minutes: 8
+      # The same pinned static ffmpeg the worker image ships, copied from its image: no dependency on the
+      # Ubuntu package mirror, which crawled at ~50 KB/s often enough to time jobs out.
+      - name: Install ffmpeg
+        timeout-minutes: 5
+        run: |
+          container=$(docker create mwader/static-ffmpeg:8.0)
+          sudo docker cp "$container:/ffmpeg" /usr/local/bin/ffmpeg
+          sudo docker cp "$container:/ffprobe" /usr/local/bin/ffprobe
+          docker rm "$container"
+          ffmpeg -version | head -1
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
@@ -55,9 +61,15 @@ jobs:
         with: { package_json_file: fanout/package.json }
       - uses: actions/setup-node@v5
         with: { node-version: 24, cache: pnpm, cache-dependency-path: fanout/pnpm-lock.yaml }
-      # A stalled package mirror once hung a job until its timeout: fail fast and retry instead.
-      - run: printf 'Acquire::Retries "3";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\n' | sudo tee /etc/apt/apt.conf.d/80-fanout-retries
-      - run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends ffmpeg
-        timeout-minutes: 8
+      # The same pinned static ffmpeg the worker image ships, copied from its image: no dependency on the
+      # Ubuntu package mirror, which crawled at ~50 KB/s often enough to time jobs out.
+      - name: Install ffmpeg
+        timeout-minutes: 5
+        run: |
+          container=$(docker create mwader/static-ffmpeg:8.0)
+          sudo docker cp "$container:/ffmpeg" /usr/local/bin/ffmpeg
+          sudo docker cp "$container:/ffprobe" /usr/local/bin/ffprobe
+          docker rm "$container"
+          ffmpeg -version | head -1
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:integration
