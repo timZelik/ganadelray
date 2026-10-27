@@ -45,9 +45,6 @@ Then paste:
 curl -fsSL https://raw.githubusercontent.com/timZelik/ganadelray/main/fanout/deploy/install.sh | sudo bash
 ```
 
-> Until the Fanout pull requests are merged, install from the branch instead:
-> `curl -fsSL https://raw.githubusercontent.com/timZelik/ganadelray/claude/fanout-gana-hosted/fanout/deploy/install.sh | sudo FANOUT_BRANCH=claude/fanout-gana-hosted bash`
-
 The script installs Docker, opens ports 80/443 on the server, generates all secrets, gets an HTTPS certificate, builds and starts everything (the first build takes several minutes on a small server), and then **asks you to create your own login**. It ends by printing the address.
 
 ## Step 3: Give Gana her login
