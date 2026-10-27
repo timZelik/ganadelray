@@ -30,11 +30,19 @@ jobs:
       # A stalled package mirror once hung a job until its timeout: fail fast and retry instead.
       - run: printf 'Acquire::Retries "3";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\n' | sudo tee /etc/apt/apt.conf.d/80-fanout-retries
       - run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends ffmpeg
+        timeout-minutes: 8
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
-      - run: pnpm --filter @fanout/web exec playwright install --with-deps chromium
+      # Only the headless browser: GitHub's Ubuntu runners already carry Chromium's libraries, while
+      # --with-deps pulled ~25 MB of fonts from a mirror slow enough to hang the job.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('fanout/pnpm-lock.yaml') }}
+      - run: pnpm --filter @fanout/web exec playwright install chromium
+        timeout-minutes: 5
       - run: pnpm test:e2e
 
   integration:
@@ -50,5 +58,6 @@ jobs:
       # A stalled package mirror once hung a job until its timeout: fail fast and retry instead.
       - run: printf 'Acquire::Retries "3";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\n' | sudo tee /etc/apt/apt.conf.d/80-fanout-retries
       - run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends ffmpeg
+        timeout-minutes: 8
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:integration
