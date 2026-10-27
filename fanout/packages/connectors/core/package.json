@@ -1,0 +1,21 @@
+{
+  "name": "@fanout/connectors-core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@fanout/domain": "workspace:*",
+    "@fanout/logging": "workspace:*",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@fanout/testing": "workspace:*",
+    "msw": "^3.0.3"
+  }
+}

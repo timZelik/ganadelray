@@ -1,0 +1,75 @@
+name: fanout CI
+
+# Pushes to main and every pull request; branch pushes are covered by their PR, so each commit runs once.
+on:
+  push:
+    branches: [main]
+    paths: ['fanout/**', '.github/workflows/fanout-ci.yml']
+  pull_request:
+    paths: ['fanout/**', '.github/workflows/fanout-ci.yml']
+
+concurrency:
+  group: fanout-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: fanout
+
+jobs:
+  checks:
+    name: Lint, typecheck, unit + contract, end-to-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with: { package_json_file: fanout/package.json }
+      - uses: actions/setup-node@v5
+        with: { node-version: 24, cache: pnpm, cache-dependency-path: fanout/pnpm-lock.yaml }
+      # The same pinned static ffmpeg the worker image ships, copied from its image: no dependency on the
+      # Ubuntu package mirror, which crawled at ~50 KB/s often enough to time jobs out.
+      - name: Install ffmpeg
+        timeout-minutes: 5
+        run: |
+          container=$(docker create mwader/static-ffmpeg:8.0)
+          sudo docker cp "$container:/ffmpeg" /usr/local/bin/ffmpeg
+          sudo docker cp "$container:/ffprobe" /usr/local/bin/ffprobe
+          docker rm "$container"
+          ffmpeg -version | head -1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      # Only the headless browser: GitHub's Ubuntu runners already carry Chromium's libraries, while
+      # --with-deps pulled ~25 MB of fonts from a mirror slow enough to hang the job.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('fanout/pnpm-lock.yaml') }}
+      - run: pnpm --filter @fanout/web exec playwright install chromium
+        timeout-minutes: 5
+      - run: pnpm test:e2e
+
+  integration:
+    name: 'Integration (Testcontainers: Postgres, Valkey, S3)'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with: { package_json_file: fanout/package.json }
+      - uses: actions/setup-node@v5
+        with: { node-version: 24, cache: pnpm, cache-dependency-path: fanout/pnpm-lock.yaml }
+      # The same pinned static ffmpeg the worker image ships, copied from its image: no dependency on the
+      # Ubuntu package mirror, which crawled at ~50 KB/s often enough to time jobs out.
+      - name: Install ffmpeg
+        timeout-minutes: 5
+        run: |
+          container=$(docker create mwader/static-ffmpeg:8.0)
+          sudo docker cp "$container:/ffmpeg" /usr/local/bin/ffmpeg
+          sudo docker cp "$container:/ffprobe" /usr/local/bin/ffprobe
+          docker rm "$container"
+          ffmpeg -version | head -1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:integration
