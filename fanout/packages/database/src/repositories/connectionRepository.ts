@@ -35,6 +35,13 @@ export function createConnectionRepository(database: Database, tokenCipher: Toke
     async listAll(): Promise<Connection[]> {
       return (await database.select().from(connections)).map(toEntity);
     },
+    /** Replaces the stored credentials (e.g. a new Buffer API key) and marks the connection usable again. */
+    async replaceCredentials(connectionId: string, tokenSet: TokenSet, settings: Record<string, unknown>): Promise<void> {
+      await database.update(connections).set({ encryptedTokenSet: tokenCipher.encrypt(tokenSet), settings, status: 'active' }).where(eq(connections.id, connectionId));
+    },
+    async delete(connectionId: string): Promise<void> {
+      await database.delete(connections).where(eq(connections.id, connectionId));
+    },
     async updateStatus(connectionId: string, status: ConnectionStatus): Promise<void> {
       await database.update(connections).set({ status }).where(eq(connections.id, connectionId));
     },

@@ -28,6 +28,12 @@ describe('loadEnvironment', () => {
     expect(() => loadEnvironment({ ...withDevelopmentKey, NODE_ENV: 'production' })).toThrow(/must not be used in production/);
   });
 
+  it('requires a real auth secret in production', () => {
+    const productionKey = Buffer.alloc(32, 9).toString('base64');
+    expect(() => loadEnvironment({ ...minimalEnvironment, NODE_ENV: 'production', TOKEN_ENCRYPTION_KEY: productionKey })).toThrow(/Set AUTH_SECRET/);
+    expect(loadEnvironment({ ...minimalEnvironment, NODE_ENV: 'production', TOKEN_ENCRYPTION_KEY: productionKey, AUTH_SECRET: 'x'.repeat(40) }).AUTH_SECRET).toHaveLength(40);
+  });
+
   it('rejects an encryption key that is not 32 bytes', () => {
     expect(() => loadEnvironment({ ...minimalEnvironment, TOKEN_ENCRYPTION_KEY: 'short' })).toThrow(/32 bytes/);
   });

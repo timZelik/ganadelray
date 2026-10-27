@@ -15,12 +15,20 @@ export const defaultJobOptions: JobsOptions = {
 
 export type PipelineQueues = { [Name in QueueName]: Queue<JobPayload<Name>> } & {
   enqueueIngest(payload: JobPayload<'ingest'>): Promise<void>;
+  findIngestOutcome(connectionId: string, externalId: string): Promise<IngestOutcome>;
   enqueuePrepare(publishJobId: string, options?: { delayMilliseconds?: number; jobId?: string }): Promise<void>;
   enqueuePublish(publishJobId: string, options?: { delayMilliseconds?: number }): Promise<void>;
   scheduleWatcher(connectionId: string, intervalMilliseconds: number): Promise<void>;
   scheduleAssetPurge(intervalMilliseconds: number): Promise<void>;
   close(): Promise<void>;
 };
+
+/** Where a detected or uploaded item is in ingest; `failed` carries the reason a person should see. */
+export type IngestOutcome =
+  | { state: 'processing' }
+  | { state: 'done'; sourceItemId: string | null }
+  | { state: 'failed'; reason: string }
+  | { state: 'unknown' };
 
 function createQueue<Name extends QueueName>(name: Name, connection: Redis): Queue<JobPayload<Name>> {
   return new Queue<JobPayload<Name>>(name, { connection, defaultJobOptions });
@@ -39,6 +47,14 @@ export function createPipelineQueues(connection: Redis): PipelineQueues {
     ...queues,
     async enqueueIngest(payload) {
       await queues.ingest.add('ingest', payload, { jobId: jobIdentifiers.ingest(payload.connectionId, payload.candidate.externalId) });
+    },
+    async findIngestOutcome(connectionId, externalId) {
+      const job = await queues.ingest.getJob(jobIdentifiers.ingest(connectionId, externalId));
+      if (!job) return { state: 'unknown' };
+      const jobState = await job.getState();
+      if (jobState === 'completed') return { state: 'done', sourceItemId: typeof job.returnvalue === 'string' ? job.returnvalue : null };
+      if (jobState === 'failed') return { state: 'failed', reason: job.failedReason ?? 'Unknown error' };
+      return { state: 'processing' };
     },
     async enqueuePrepare(publishJobId, { delayMilliseconds = 0, jobId = jobIdentifiers.prepare(publishJobId) } = {}) {
       await queues.prepare.add('prepare', { publishJobId }, { jobId, delay: Math.max(0, delayMilliseconds) });

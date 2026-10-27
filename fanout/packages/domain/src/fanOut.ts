@@ -22,6 +22,11 @@ function isPublishable(workflow: Workflow, destination: WorkflowDestination): bo
   return workflow.enabled && destination.enabled;
 }
 
+/** The console stand-in never posts anything, so its jobs are always dry runs, whatever the global setting. */
+function isDryRun(destination: WorkflowDestination, dryRun: boolean): boolean {
+  return dryRun || destination.publisherRoute === 'console';
+}
+
 function scheduledTimeFor(workflow: Workflow, now: Date): Date | null {
   return workflow.mode === 'auto_new' ? now : null;
 }
@@ -36,7 +41,7 @@ export async function planPublishJobs({ workflow, sourceItem, now, dryRun }: Fan
       workflowDestinationId: destination.id,
       idempotencyKey: await createPublishJobIdempotencyKey(sourceItem.id, destination.id),
       scheduledFor: scheduledTimeFor(workflow, now),
-      dryRun,
+      dryRun: isDryRun(destination, dryRun),
     })),
   );
 }

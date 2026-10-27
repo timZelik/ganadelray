@@ -1,7 +1,9 @@
 import { rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { loadEnvironment } from '@fanout/config';
-import { createDatabase, runMigrations, type PublishJobSummary } from '@fanout/database';
+import { randomUUID } from 'node:crypto';
+import { createDatabase, createRepositories, createTokenCipher, runMigrations, seedDefaults, uploadAccountHandle, type PublishJobSummary } from '@fanout/database';
+import { storageKeys } from '@fanout/storage';
 import { createTemporaryDirectory, createSilentLogger, createTestVideo, startPostgresContainer, startRedisContainer, startS3Container, buildTestEnvironment, type StartedPostgreSqlContainer, type StartedS3, type StartedTestContainer } from '@fanout/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startWorker, type RunningWorker } from '../src/bootstrap.ts';
@@ -39,6 +41,7 @@ beforeAll(async () => {
   const environment = loadEnvironment(buildTestEnvironment({ databaseUrl: postgres.getConnectionUri(), redisUrl: startedRedis.url, s3 }, { HUB_DIRECTORY: hubDirectory, MEDIA_WORK_DIRECTORY: await createTemporaryDirectory('fanout-media-') }));
   const migrationHandle = createDatabase(environment.DATABASE_URL, 1);
   await runMigrations(migrationHandle.database);
+  await seedDefaults(createRepositories(migrationHandle.database, createTokenCipher(environment.TOKEN_ENCRYPTION_KEY)), { hubDirectory });
   await migrationHandle.close();
   worker = await startWorker(environment, createSilentLogger());
 });
@@ -85,12 +88,29 @@ describe('hub folder → watcher → media → publish (dry run)', () => {
     expect(await jobsForTitle('broken')).toEqual([]);
   });
 
+  it('processes a browser upload: practice posts on every platform, a thumbnail, and the temporary upload removed', async () => {
+    const { connectionRepository, sourceItemRepository } = worker.dependencies.repositories;
+    const uploadConnection = (await connectionRepository.findByPlatformAndHandle('upload', uploadAccountHandle))!;
+    const exportDirectory = await createTemporaryDirectory('fanout-upload-');
+    const videoPath = await createTestVideo(exportDirectory, { width: 1920, height: 1080, durationSeconds: 4, fileName: 'studio-tour.mov' });
+    const uploadId = randomUUID();
+    const storageKey = storageKeys.upload(uploadId, '.mov');
+    await worker.dependencies.storage.uploadFile(storageKey, videoPath, 'video/quicktime');
+    await worker.dependencies.queues.enqueueIngest({ connectionId: uploadConnection.id, candidate: { externalId: uploadId, title: 'studio tour', originalCaption: 'Inside the studio', detectedAt: new Date().toISOString(), locator: { storageKey, fileName: 'studio-tour.mov' } } });
+    const jobs = await waitForSettledJobs('studio tour', 4);
+    expect(jobs.every((job) => job.status === 'published' && job.dryRun && job.publisherRoute === 'console')).toBe(true);
+    const sourceItem = (await sourceItemRepository.findByExternalId(uploadConnection.id, uploadId))!;
+    expect(await worker.dependencies.storage.objectExists(sourceItem.thumbnailStorageKey!)).toBe(true);
+    expect(await worker.dependencies.storage.objectExists(storageKey)).toBe(false);
+    expect(await worker.dependencies.queues.findIngestOutcome(uploadConnection.id, uploadId)).toEqual({ state: 'done', sourceItemId: sourceItem.id });
+  });
+
   it('never creates duplicate jobs when the same item is seen again', async () => {
     const { connectionRepository, workflowRepository } = worker.dependencies.repositories;
     const hub = await connectionRepository.findByPlatformAndHandle('local_folder', 'hub');
     await worker.dependencies.repositories.watchCursorRepository.save(hub!.id, null);
     await new Promise((resolve) => setTimeout(resolve, 4_000));
     expect(await jobsForTitle('morning routine')).toHaveLength(4);
-    expect((await workflowRepository.listAll())).toHaveLength(1);
+    expect((await workflowRepository.listAll()).filter((workflow) => workflow.sourceConnectionId === hub!.id)).toHaveLength(1);
   });
 });

@@ -71,7 +71,7 @@ export function createPublishProcessor(dependencies: WorkerDependencies) {
       const validation = context.publisher.validate(preparedAsset, post);
       if (!validation.valid) throw new PermanentError(`Not publishable to ${context.destination.destinationKind}: ${validation.problems.join('; ')}`);
       const http = httpClientFor(dependencies, publishJob.dryRun, logger);
-      const attempt = await context.publisher.publish(connection, preparedAsset, post, { dryRun: publishJob.dryRun, correlationId: publishJobId, logger, http });
+      const attempt = await context.publisher.publish(connection, preparedAsset, post, { dryRun: publishJob.dryRun, correlationId: publishJobId, logger, http, publisherSettings: context.destination.publisherSettings });
       const recordedRequests = 'recordedRequests' in http ? http.recordedRequests() : [];
       await recordOutcome(dependencies, publishJobId, { ...attempt, requestPreview: attempt.requestPreview ?? recordedRequests });
       logger.info({ destinationKind: context.destination.destinationKind, outcome: attempt.outcome }, 'Publish step finished');

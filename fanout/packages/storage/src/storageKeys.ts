@@ -5,5 +5,7 @@ const renditionPrefix = 'renditions/';
 export const storageKeys = {
   master: (sourceConnectionId: string, checksum: string, extension: string) => `${masterPrefix}${sourceConnectionId}/${checksum}${extension}`,
   rendition: (sourceItemId: string, renderFingerprint: string) => `${renditionPrefix}${sourceItemId}/${renderFingerprint}.mp4`,
+  thumbnail: (masterChecksum: string) => `thumbnails/${masterChecksum}.jpg`,
+  upload: (uploadId: string, extension: string) => `uploads/${uploadId}${extension}`,
   isMaster: (key: string) => key.startsWith(masterPrefix),
 };

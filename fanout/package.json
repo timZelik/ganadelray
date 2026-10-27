@@ -17,8 +17,7 @@
     "test:e2e": "pnpm --filter @fanout/web test:e2e",
     "test:all": "pnpm lint && pnpm typecheck && pnpm test && pnpm test:integration",
     "db:generate": "pnpm --filter @fanout/database db:generate",
-    "db:migrate": "pnpm --filter @fanout/database db:migrate",
-    "db:seed": "pnpm --filter @fanout/database db:seed"
+    "db:migrate": "pnpm --filter @fanout/database db:migrate"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",

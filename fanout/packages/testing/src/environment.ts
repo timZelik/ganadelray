@@ -23,6 +23,7 @@ export function buildTestEnvironment({ databaseUrl, redisUrl, s3 }: TestInfrastr
     PUBLISH_DRY_RUN: 'true',
     WATCH_INTERVAL_SECONDS: '1',
     HUB_SETTLE_SECONDS: '0',
+    ENABLE_HUB_FOLDER: 'true',
     ...overrides,
   };
 }

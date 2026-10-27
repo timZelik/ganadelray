@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const sourceKinds = ['local_folder', 'google_drive', 'dropbox', 's3', 'instagram', 'youtube', 'tiktok', 'rss'] as const;
+export const sourceKinds = ['upload', 'local_folder', 'google_drive', 'dropbox', 's3', 'instagram', 'youtube', 'tiktok', 'rss'] as const;
 export const sourceKindSchema = z.enum(sourceKinds);
 export type SourceKind = z.infer<typeof sourceKindSchema>;
 

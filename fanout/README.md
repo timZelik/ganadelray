@@ -2,23 +2,24 @@
 
 Self-hosted content repurposing: watch a source, normalize each video per platform, adapt the caption per platform, and publish everywhere — immediately or on a schedule. A repurpose.io alternative you run with your own accounts and keys.
 
-> **Status:** Phase 0 (skeleton + dry-run pipeline). Nothing is posted anywhere yet; every destination is served by the `ConsolePublisher`, which validates, renders and logs the exact post. See [PROGRESS.md](./PROGRESS.md).
+Upload a video in the browser (or drop it into a hub folder); Fanout makes a vertical version for each platform, writes each platform's caption, and posts through Buffer, which holds the social media logins.
 
-![Dashboard](docs/images/dashboard-phase-0.png)
+- **Put it online for someone:** [docs/hosting.md](docs/hosting.md): a free Oracle Cloud server and one install command. Costs compared with repurpose.io are there too.
+- **Using it:** [docs/gana-guide.md](docs/gana-guide.md), a one-page guide for the person posting.
+- **See it:** [docs/fanout-gana-demo.mp4](docs/fanout-gana-demo.mp4), recorded from the running app.
+- **Status:** [PROGRESS.md](./PROGRESS.md).
 
-Watch the 2-minute demo recorded from the running app: [docs/fanout-phase-0-demo.mp4](docs/fanout-phase-0-demo.mp4).
-
-## Quick start
+## Run it locally
 
 ```bash
-docker compose up --build        # postgres, valkey, s3, api, worker, web
-open http://localhost:8080       # dashboard (Bull Board at /admin/queues)
-cp my-video.mp4 hub/             # optional caption: hub/my-video.txt
+docker compose up --build                 # postgres, valkey, s3, api, worker, web
+./deploy/add-login.sh                     # create a login (asks for name, email, password)
+open http://localhost:8080                # log in, then upload a video
 ```
 
-Within a few seconds the dashboard shows one job per destination (Instagram Reels, TikTok, YouTube Shorts, LinkedIn). Expand a row to see the request that would have been sent.
+Platforms stay in **practice mode** (everything is prepared and shown, nothing is posted) until a Buffer account is connected on the Platforms page. Locally, `PUBLISH_DRY_RUN` defaults to `true`, so nothing posts even with Buffer connected; the hosted install sets it to `false`. Developers can also drop files into `./hub`.
 
-Every default in `docker-compose.yml` is for local development. Before exposing anything, copy `.env.example` to `.env` and set `NODE_ENV=production` and a real `TOKEN_ENCRYPTION_KEY` (the app refuses the development key in production).
+Every default in `docker-compose.yml` is for local development; the app refuses the development secrets when `NODE_ENV=production`, and `deploy/install.sh` generates real ones.
 
 ## How it works
 
@@ -57,7 +58,9 @@ packages/
   api-contract/ Zod schemas shared by the API and the dashboard
   connectors/
     core/          SourceWatcher, Publisher, OAuthProvider, RateLimitPolicy, registry, HTTP client
-    console/       ConsolePublisher for every destination kind
+    console/       ConsolePublisher for every destination kind (practice mode)
+    buffer/        Buffer publisher (GraphQL), channel listing
+    upload/        Browser uploads as a source
     local-folder/  Hub folder watcher
   testing/      Fixtures, factories, MSW and Testcontainers helpers
 ```
